@@ -1,0 +1,33 @@
+# Demonstrates the emulators running as a standalone network service, with a
+# separate test-runner container exercising them over the docker network.
+#
+#   docker compose up --build --abort-on-container-exit --exit-code-from tests
+#
+# The `tests` container runs the full suite; because AMMETER_HOST is set, the
+# otherwise-skipped external-service smoke test runs against the live `emulators`
+# service (real cross-container sockets), on top of the in-process integration tests.
+services:
+  emulators:
+    build: .
+    command: python main.py
+    environment:
+      AMMETER_BIND_HOST: "0.0.0.0"   # reachable across the compose network
+      AMMETER_SERVE_FOREVER: "1"     # keep serving instead of sampling-and-exiting
+    ports:
+      - "5001:5001"
+      - "5002:5002"
+      - "5003:5003"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import socket; socket.create_connection(('localhost', 5001), 2).close()"]
+      interval: 2s
+      timeout: 3s
+      retries: 10
+
+  tests:
+    build: .
+    command: pytest -q
+    environment:
+      AMMETER_HOST: "emulators"      # target the emulators service for the live smoke test
+    depends_on:
+      emulators:
+        condition: service_healthy

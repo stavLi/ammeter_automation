@@ -5,6 +5,7 @@ from typing import Optional
 def request_current_from_ammeter(
     port: int,
     command: bytes,
+    host: str = 'localhost',
     timeout: float = 5.0,
 ) -> Optional[float]:
     """Send a measurement command to an ammeter emulator and return the current.
@@ -15,13 +16,13 @@ def request_current_from_ammeter(
     """
     with socket(AF_INET, SOCK_STREAM) as s:
         s.settimeout(timeout)
-        s.connect(('localhost', port))
+        s.connect((host, port))
         s.sendall(command)
         data = s.recv(1024)
         if not data:
-            print(f"No data received from port {port}.")
+            print(f"No data received from {host}:{port}.")
             return None
         current = float(data.decode('utf-8'))
-        print(f"Received current measurement from port {port}: {current} A")
+        print(f"Received current measurement from {host}:{port}: {current} A")
         return current
 

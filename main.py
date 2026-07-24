@@ -1,38 +1,46 @@
+import os
 import threading
-import time
+from typing import List
 
-from Ammeters.Circutor_Ammeter import CircutorAmmeter
-from Ammeters.Entes_Ammeter import EntesAmmeter
-from Ammeters.Greenlee_Ammeter import GreenleeAmmeter
+from Ammeters.base_ammeter import AmmeterEmulatorBase
 from Ammeters.client import request_current_from_ammeter
+from src.testing.registry import AMMETERS
 
 
-def run_greenlee_emulator():
-    greenlee = GreenleeAmmeter(5001)
-    greenlee.start_server()
+def start_emulators(host: str = "localhost") -> List[AmmeterEmulatorBase]:
+    """Start every registered emulator in its own daemon thread and wait until each
+    is actually listening (no sleep-and-hope)."""
+    emulators: List[AmmeterEmulatorBase] = []
+    for spec in AMMETERS:
+        emulator = spec.emulator_cls(spec.default_port, host=host)
+        threading.Thread(target=emulator.start_server, daemon=True).start()
+        emulator.wait_until_ready()
+        emulators.append(emulator)
+    return emulators
 
-def run_entes_emulator():
-    entes = EntesAmmeter(5002)
-    entes.start_server()
 
-def run_circutor_emulator():
-    circutor = CircutorAmmeter(5003)
-    circutor.start_server()
+def sample_once(host: str = "localhost") -> None:
+    """Request one measurement from each emulator.
+
+    Each emulator matches the FULL command exactly (see each Ammeter's
+    `get_current_command`); the command bytes come from the registry so they can't
+    drift from what the server expects. The original starter sent truncated commands
+    (e.g. b'MEASURE_GREENLEE'), which never matched, so the servers never replied.
+    """
+    for spec in AMMETERS:
+        request_current_from_ammeter(spec.default_port, spec.command, host=host)
+
 
 if __name__ == "__main__":
-    # Start each ammeter in a separate thread
-    threading.Thread(target=run_greenlee_emulator, daemon=True).start()
-    threading.Thread(target=run_entes_emulator, daemon=True).start()
-    threading.Thread(target=run_circutor_emulator, daemon=True).start()
+    # Bind host is configurable so the emulators can listen on 0.0.0.0 inside a
+    # container / docker-compose network (defaults to localhost for local runs).
+    bind_host = os.environ.get("AMMETER_BIND_HOST", "localhost")
+    start_emulators(bind_host)
 
-    # Wait for the servers to start, if you have problem restarting the servers between runs try increasing sleep time.
-    time.sleep(2)
-
-    # FIX: each emulator matches the FULL command exactly (see each Ammeter's
-    # `get_current_command`). The original commented-out calls sent truncated
-    # commands (e.g. b'MEASURE_GREENLEE'), so `data == self.get_current_command`
-    # was never True and the server never replied. Sending the exact command
-    # bytes makes the emulators respond with a measurement.
-    request_current_from_ammeter(5001, b'MEASURE_GREENLEE -get_measurement')          # Greenlee
-    request_current_from_ammeter(5002, b'MEASURE_ENTES -get_data')                    # ENTES
-    request_current_from_ammeter(5003, b'MEASURE_CIRCUTOR -get_measurement -current') # CIRCUTOR
+    if os.environ.get("AMMETER_SERVE_FOREVER"):
+        # Long-lived emulator service (used by the docker-compose `emulators` service).
+        print("Emulators are serving. Press Ctrl+C to stop.")
+        threading.Event().wait()
+    else:
+        # Local demo: request one measurement from each emulator, then exit.
+        sample_once("localhost")
