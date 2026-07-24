@@ -25,7 +25,7 @@ response. Also when reviewing whether an existing assertion is trustworthy or ju
   to port `0`, read the OS-assigned port, and connect with a socket **timeout that raises**. A
   wait that can never complete must fail loudly, never pass silently.
 - **Asserting a field/stat the framework never produces** (e.g. a `p95` key that isn't emitted)
-  is a *test* bug, not an emulator bug. Raise a `TestAuthoringError`, don't file it as a finding.
+  is a *test* bug, not an emulator bug. Raise a `AuthoringError`, don't file it as a finding.
 - **std dev / variance of < 2 samples is undefined.** Guard the small-N case in both the code
   and its assertion.
 
@@ -59,7 +59,7 @@ those, not bare `assert` on raw values. Suggested vocabulary:
 
 **4. Two exception types, never conflated:**
 - `MeasurementFinding` — the emulator/framework violated its declared contract → a real finding.
-- `TestAuthoringError` — the test asked for something never declared (unknown field, wrong
+- `AuthoringError` — the test asked for something never declared (unknown field, wrong
   range) → fix the test. Never triage this as an emulator bug.
 
 ## A worked example

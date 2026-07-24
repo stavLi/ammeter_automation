@@ -38,7 +38,7 @@ a push. Run it as a pass/fail gate: every item must pass or be explicitly justif
 7. **Negative/security case per emulator.** At least one malformed / oversized / garbage-byte
    command test per ammeter, asserting no-reply/handled and no crash.
 8. **Finding vs authoring error.** Contract violations raise `MeasurementFinding`; invalid tests
-   raise `TestAuthoringError`. The two are not conflated.
+   raise `AuthoringError`. The two are not conflated.
 9. **No dead duplicates.** A test that supersedes an older one deletes it in the same change.
 
 ## Cheap policy checks (automatable, belong in CI)

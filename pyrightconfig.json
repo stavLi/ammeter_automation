@@ -6,6 +6,7 @@
   "include": [
     "Ammeters",
     "src",
+    "tests",
     "main.py"
   ],
   "exclude": [
