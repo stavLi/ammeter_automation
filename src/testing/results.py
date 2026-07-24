@@ -19,6 +19,9 @@ class Statistics:
 
 @dataclass(frozen=True)
 class TestResult:
+    # Tell pytest not to collect this as a test class (its name starts with "Test").
+    __test__ = False
+
     ammeter: str
     samples: List[float]
     statistics: Statistics

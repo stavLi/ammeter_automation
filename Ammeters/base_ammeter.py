@@ -1,8 +1,11 @@
+import logging
 import socket
 import threading
 import time
 import random
 from abc import ABC, abstractmethod
+
+logger = logging.getLogger(__name__)
 
 NotImplementedErrorMsg = "Subclasses must implement this property."
 
@@ -60,14 +63,14 @@ class AmmeterEmulatorBase(ABC):
             s.listen()
             s.settimeout(_ACCEPT_POLL_INTERVAL)  # wake periodically to check _stop
             self._ready.set()
-            print(f"{self.__class__.__name__} is running on {self.host}:{self.port}")
+            logger.info("%s is running on %s:%s", self.__class__.__name__, self.host, self.port)
             while not self._stop.is_set():
                 try:
                     conn, addr = s.accept()
                 except socket.timeout:
                     continue
                 with conn:
-                    print(f"Connected by {addr}")
+                    logger.debug("connected by %s", addr)
                     data = conn.recv(1024)
                     if data == self.get_current_command:
                         # Call the specific measure_current() method defined in subclasses
