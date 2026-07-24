@@ -11,7 +11,8 @@ _Last updated: 2026-07-24._
 - **Exercise:** Cloud Automation Developer take-home (Ness / NESS FORCE). Received 2026-07-22,
   **due 2026-07-29**. Build a pytest-based test-automation framework over three ammeter
   socket emulators. Spec: `Exam/ammeter-test-specification.md`.
-- **Current phase:** core framework vertical slice (exam reqs 1–3) built; in review as PR #5.
+- **Current phase:** framework is now runnable (`python main.py` prints a stats report) with
+  usage docs (PR #6); next is result management (task #4).
 
 ## How we work (short version — full rules in CLAUDE.md)
 - Branch per task off `origin/main` (`fix/…`, `feat/…`, `chore/…`).
@@ -36,7 +37,7 @@ _Last updated: 2026-07-24._
 | **3. Result analysis** (mean/median/std/min/max) | ✅ done (PR #5 — `analysis.py`, stdlib `statistics`) |
 | **4. Result management** (run IDs, metadata, retrieval) | ⏳ **next** (task #4) |
 | Bonus: visualization, accuracy assessment, error simulation | ⏳ task #5 |
-| Deliverables: framework, README (usage), sample results, design doc | ⏳ task #6 (README still describes the emulators) |
+| Deliverables: framework, README (usage), sample results, design doc | ⚠️ partial — framework runnable + README "How to run" added (PR #6); full README overhaul, design doc, and sample results still task #6 |
 | Constraint: minimize deps | ✅ `requirements.txt` trimmed to `pyyaml` (stats use stdlib); matplotlib added later with the viz bonus |
 
 ## Open findings

@@ -28,7 +28,9 @@ def test_no_sleep_based_waits(path: Path):
 @pytest.mark.unit
 @pytest.mark.parametrize("path", _test_files(), ids=lambda p: p.name)
 def test_no_inline_emulator_ports(path: Path):
-    hits = re.findall(r"\b50\d\d\b", path.read_text())
+    # The lookbehind avoids false positives on decimals like 0.5000 — a real port literal
+    # is never immediately preceded by a digit or a dot.
+    hits = re.findall(r"(?<![\d.])50\d\d\b", path.read_text())
     assert not hits, (
         f"{path.name} hardcodes emulator port(s) {hits}; read ports from the registry/fixtures"
     )

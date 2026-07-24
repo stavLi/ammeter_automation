@@ -1,5 +1,8 @@
+import logging
 from socket import socket, AF_INET, SOCK_STREAM
 from typing import Optional
+
+logger = logging.getLogger(__name__)
 
 
 def request_current_from_ammeter(
@@ -20,9 +23,9 @@ def request_current_from_ammeter(
         s.sendall(command)
         data = s.recv(1024)
         if not data:
-            print(f"No data received from {host}:{port}.")
+            logger.debug("no data received from %s:%s", host, port)
             return None
         current = float(data.decode('utf-8'))
-        print(f"Received current measurement from {host}:{port}: {current} A")
+        logger.debug("received current from %s:%s: %s A", host, port, current)
         return current
 
