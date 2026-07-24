@@ -11,7 +11,7 @@ _Last updated: 2026-07-24._
 - **Exercise:** Cloud Automation Developer take-home (Ness / NESS FORCE). Received 2026-07-22,
   **due 2026-07-29**. Build a pytest-based test-automation framework over three ammeter
   socket emulators. Spec: `Exam/ammeter-test-specification.md`.
-- **Current phase:** foundation + tooling done; **starting the core measurement framework**.
+- **Current phase:** core framework vertical slice (exam reqs 1–3) built; in review as PR #5.
 
 ## How we work (short version — full rules in CLAUDE.md)
 - Branch per task off `origin/main` (`fix/…`, `feat/…`, `chore/…`).
@@ -31,13 +31,13 @@ _Last updated: 2026-07-24._
 | Requirement | Status |
 |---|---|
 | Make `main.py` return data; document fixes | ✅ done (PR #1; `base_ammeter` enhancements documented in PR #3) |
-| **1. Unified measurement API** | ⏳ **next** (task #2) |
-| **2. Measurement sampling** (count/duration/frequency) | ⏳ task #3 |
-| **3. Result analysis** (mean/median/std/min/max) | ⏳ task #3 |
-| **4. Result management** (run IDs, metadata, retrieval) | ⏳ task #4 |
+| **1. Unified measurement API** | ✅ done (PR #5 — config-driven `AmmeterTestFramework`) |
+| **2. Measurement sampling** (count/duration/frequency) | ✅ done (PR #5 — `sampling.py`, monotonic pacing) |
+| **3. Result analysis** (mean/median/std/min/max) | ✅ done (PR #5 — `analysis.py`, stdlib `statistics`) |
+| **4. Result management** (run IDs, metadata, retrieval) | ⏳ **next** (task #4) |
 | Bonus: visualization, accuracy assessment, error simulation | ⏳ task #5 |
 | Deliverables: framework, README (usage), sample results, design doc | ⏳ task #6 (README still describes the emulators) |
-| Constraint: minimize deps | ⚠️ `requirements.txt` lists numpy/scipy/matplotlib/seaborn/pandas — trim to what we actually use |
+| Constraint: minimize deps | ✅ `requirements.txt` trimmed to `pyyaml` (stats use stdlib); matplotlib added later with the viz bonus |
 
 ## Open findings
 - **FIND-001** (`docs/findings.md`): silent/slow client can wedge the single-threaded
@@ -50,5 +50,6 @@ _Last updated: 2026-07-24._
 - Optional: `pyright-lsp` plugin enabled locally for live diagnostics (not committed).
 
 ## Next up
-Core measurement framework (tasks #2–#4), TDD on top of the existing registry + oracle +
-fixtures. Then bonuses (task #5) and docs/sample-results (task #6).
+Result management (task #4): unique run IDs, metadata, archive/retrieve/compare — building on
+the `TestResult` shape (which already has `to_dict`). Then bonuses (task #5: visualization,
+cross-ammeter accuracy, error simulation) and docs/sample-results (task #6).
