@@ -25,13 +25,14 @@ if __name__ == "__main__":
     threading.Thread(target=run_entes_emulator, daemon=True).start()
     threading.Thread(target=run_circutor_emulator, daemon=True).start()
 
-    # This section is commented out because it shouldn't work.
-    # Read the README.md file as well as the source code if you need, and fix the problem.
-
     # Wait for the servers to start, if you have problem restarting the servers between runs try increasing sleep time.
-    time.sleep(5)
-    # request_current_from_ammeter(5001, b'MEASURE_GREENLEE')  # Request from Greenlee Ammeter
-    # request_current_from_ammeter(5002, b'MEASURE_ENTES')  # Request from ENTES Ammeter
-    # request_current_from_ammeter(5003, b'MEASURE_CIRCUTOR')  # Request from CIRCUTOR Ammeter
+    time.sleep(2)
 
-    pass
+    # FIX: each emulator matches the FULL command exactly (see each Ammeter's
+    # `get_current_command`). The original commented-out calls sent truncated
+    # commands (e.g. b'MEASURE_GREENLEE'), so `data == self.get_current_command`
+    # was never True and the server never replied. Sending the exact command
+    # bytes makes the emulators respond with a measurement.
+    request_current_from_ammeter(5001, b'MEASURE_GREENLEE -get_measurement')          # Greenlee
+    request_current_from_ammeter(5002, b'MEASURE_ENTES -get_data')                    # ENTES
+    request_current_from_ammeter(5003, b'MEASURE_CIRCUTOR -get_measurement -current') # CIRCUTOR
