@@ -11,6 +11,8 @@ See .claude/skills/test-assertion-oracle. Two exception types keep findings hone
 import math
 from typing import Optional, Sequence
 
+from .results import Statistics
+
 
 class MeasurementFinding(AssertionError):
     """The system under test violated its declared contract — a real finding."""
@@ -60,3 +62,29 @@ def assert_varies(samples: Sequence[float]) -> None:
         raise MeasurementFinding(
             f"expected varying measurements, all {len(samples)} samples were {samples[0]}"
         )
+
+
+def assert_stats(stats: Statistics, expected_count: int) -> None:
+    """Assert a statistics summary is internally consistent and has the expected sample count.
+
+    Checks the *relationships* a valid summary must satisfy (min <= mean/median <= max,
+    std_dev >= 0), not exact values — the underlying measurements are random.
+    """
+    if expected_count < 0:
+        raise AuthoringError(f"expected_count must be >= 0, got {expected_count}")
+    if stats.count != expected_count:
+        raise MeasurementFinding(f"expected count {expected_count}, got {stats.count}")
+    for name in ("mean", "median", "std_dev", "minimum", "maximum"):
+        value = getattr(stats, name)
+        if not isinstance(value, float) or not math.isfinite(value):
+            raise MeasurementFinding(f"statistic {name} is not a finite float: {value!r}")
+    if stats.std_dev < 0:
+        raise MeasurementFinding(f"std_dev must be non-negative, got {stats.std_dev}")
+    if stats.minimum > stats.maximum:
+        raise MeasurementFinding(f"minimum {stats.minimum} > maximum {stats.maximum}")
+    for name in ("mean", "median"):
+        value = getattr(stats, name)
+        if not (stats.minimum <= value <= stats.maximum):
+            raise MeasurementFinding(
+                f"{name} {value} outside [min={stats.minimum}, max={stats.maximum}]"
+            )

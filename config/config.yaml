@@ -1,24 +1,30 @@
+# Configuration for the ammeter test framework.
+# The framework is driven entirely by this file — ports, commands, how many samples to
+# take and how fast, and which statistics to report. Ports/commands mirror the emulators
+# as wired in main.py; a consistency test keeps them in sync with the code registry.
+
 testing:
   sampling:
-    measurements_count: NULL
-    total_duration_seconds: NULL
-    sampling_frequency_hz: NULL
+    # Any two of these determine the third; total_duration_seconds is validated against
+    # measurements_count / sampling_frequency_hz (must agree within a small tolerance).
+    measurements_count: 30
+    sampling_frequency_hz: 10.0
+    total_duration_seconds: 3.0
+    # Per-measurement socket timeout (seconds). A slow/unreachable ammeter fails this one
+    # sample rather than hanging the whole run.
+    measurement_timeout_seconds: 2.0
 
 ammeters:
-#  greenlee:
-#    port: 5000
-#    command: "MEASURE_GREENLEE -get_measurement"
-#  entes:
-#    port: 5001
-#    command: "MEASURE_ENTES -get_data"
-#  circutor:
-#    port: 5002
-#    command: "MEASURE_CIRCUTOR -get_measurement"
+  greenlee:
+    port: 5001
+    command: "MEASURE_GREENLEE -get_measurement"
+  entes:
+    port: 5002
+    command: "MEASURE_ENTES -get_data"
+  circutor:
+    port: 5003
+    command: "MEASURE_CIRCUTOR -get_measurement -current"
 
 analysis:
-  statistical_metrics:
-  visualization:
-    enabled: true
-    plot_types:
-
-result_management:
+  # Statistics computed over each run's samples (see src/testing/analysis.py).
+  metrics: [mean, median, std_dev, minimum, maximum]
