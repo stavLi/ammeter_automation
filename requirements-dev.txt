@@ -1,0 +1,4 @@
+# Development-only tooling (not required to run the framework).
+# Install with:  pip install -r requirements-dev.txt
+pytest>=7.0.0
+pyright>=1.1.400
