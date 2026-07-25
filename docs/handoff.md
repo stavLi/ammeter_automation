@@ -27,6 +27,9 @@ _Last updated: 2026-07-25._
 | #2 | `chore/agentic-setup` | `CLAUDE.md`, three committed skills, pyright config + dev deps. |
 | #3 | `feat/ci-docker-security` | Test harness, registry, assertion oracle, security-negative tests, CI matrix, Docker + compose. |
 | #4 | `chore/ci-tidy` | CI trigger dedup + bump actions to Node 24. |
+| #7 | `feat/result-management` | JSON result archive (run IDs, metadata) — later reshaped to one-run-per-campaign (#8). |
+| #8 | `refactor/campaign-run-model` | One campaign = one run = one file (simpler comparison). |
+| #9 | `feat/results-cli` | `--list`/`--show`/`--compare` read-only archive CLI. |
 
 ## Exam requirements → status
 | Requirement | Status |

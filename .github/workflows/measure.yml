@@ -1,0 +1,78 @@
+# Manually-triggered showcase: run the ammeter measurement framework in the pipeline,
+# compare two runs, and surface the results straight from the GitHub run page.
+#
+# Why manual (workflow_dispatch): measurements are a demo action, not something to run on
+# every push. Why one workflow (not two): GitHub runners are ephemeral — their filesystem is
+# wiped when the job ends — so comparing two runs is simplest when both are produced in the
+# same job. The result JSON is preserved as a downloadable artifact; the comparison is written
+# to the run's summary so a reviewer sees it without downloading anything.
+name: Measurement showcase
+
+on:
+  workflow_dispatch:
+    inputs:
+      ammeter:
+        description: "Single ammeter to run (blank = all configured)"
+        required: false
+        default: ""
+
+# Least privilege: this job only reads the checkout and uploads an artifact.
+permissions:
+  contents: read
+
+jobs:
+  measure:
+    name: run & compare
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Install runtime dependencies
+        run: |
+          python -m venv .venv
+          .venv/bin/pip install --upgrade pip
+          .venv/bin/pip install -r requirements.txt
+
+      - name: Run two measurement campaigns
+        # The optional ammeter input is passed via env (not interpolated into the shell) so a
+        # crafted input can't be injected into the command line.
+        env:
+          AMMETER: ${{ inputs.ammeter }}
+        run: |
+          ARGS=()
+          [ -n "$AMMETER" ] && ARGS+=(--ammeter "$AMMETER")
+          .venv/bin/python main.py "${ARGS[@]}" | tee runA.log
+          .venv/bin/python main.py "${ARGS[@]}" | tee runB.log
+          echo "RUN_A=$(grep -oE 'Archived run \S+' runA.log | awk '{print $3}')" >> "$GITHUB_ENV"
+          echo "RUN_B=$(grep -oE 'Archived run \S+' runB.log | awk '{print $3}')" >> "$GITHUB_ENV"
+
+      - name: Compare the two runs and publish to the run summary
+        run: |
+          .venv/bin/python main.py --compare "$RUN_A" "$RUN_B" | tee compare.txt
+          {
+            echo "## Measurement showcase"
+            echo ""
+            echo "Two campaigns were run and archived, then compared."
+            echo ""
+            echo "### Run A — \`$RUN_A\`"
+            echo '```'
+            .venv/bin/python main.py --show "$RUN_A"
+            echo '```'
+            echo "### Comparison (delta = B − A)"
+            echo '```'
+            cat compare.txt
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload result JSON
+        if: always()  # keep the archive even if the compare step failed
+        uses: actions/upload-artifact@v4
+        with:
+          name: measurement-results
+          path: results/
+          if-no-files-found: error
