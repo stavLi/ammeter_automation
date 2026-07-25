@@ -1,6 +1,16 @@
-# Ammeter Emulators
+# Ammeter measurement & test framework
 
-This project provides emulators for different types of ammeters: Greenlee, ENTES, and CIRCUTOR. Each ammeter emulator runs on a separate thread and can respond to current measurement requests. On top of them sits a **config-driven test framework** that samples each ammeter and reports statistics.
+Three ammeter emulators — **Greenlee**, **ENTES**, **CIRCUTOR** — are provided as TCP socket
+servers (one per device, each on its own thread and port). On top of them this project builds a
+**config-driven measurement framework**: a unified API to sample any ammeter, configurable
+sampling, statistical analysis, result archiving with retrieval/comparison, robust error
+handling, and — as bonuses — precision assessment, visualization, and error simulation.
+
+The emulators are treated as an **API/service under test**: a request/response contract over a
+socket, with the same concerns as a REST/gRPC endpoint (connection setup, timeouts,
+malformed-input handling, failure modes). The full brief is in
+[`Exam/ammeter-test-specification.md`](Exam/ammeter-test-specification.md); the design rationale,
+bug fixes, and installed libraries are in [`docs/design-decisions.md`](docs/design-decisions.md).
 
 ## How to run
 
@@ -9,10 +19,11 @@ Requires Python 3.9+.
 ```sh
 # 1. Set up a virtualenv and install dependencies
 python3 -m venv .venv
-.venv/bin/pip install -r requirements.txt        # runtime (pyyaml)
+.venv/bin/pip install -r requirements.txt        # runtime (pyyaml, matplotlib)
 .venv/bin/pip install -r requirements-dev.txt     # dev tools (pytest, pyright)
 
-# 2. Run the framework — starts the emulators, samples each ammeter, prints a stats report
+# 2. Run the framework — starts the emulators, samples each ammeter, prints a stats report,
+#    archives the run, and writes plots
 .venv/bin/python main.py
 .venv/bin/python main.py --ammeter entes          # a single ammeter
 .venv/bin/python main.py --verbose                # with per-measurement logging
@@ -43,11 +54,54 @@ Runs the emulators as a service and executes the full test suite against them.
 - **Measurement showcase** (`.github/workflows/measure.yml`) is a manually-triggered workflow
   (Actions tab → *Measurement showcase* → *Run workflow*) that runs the framework in the
   pipeline: it takes two measurement campaigns, compares them, writes the comparison to the
-  run summary, and uploads the result JSON as a downloadable artifact. Because CI runners are
-  ephemeral, results are preserved as an artifact rather than written back to the repo.
+  run summary, and uploads the result JSON and plots as a downloadable artifact. Because CI
+  runners are ephemeral, results are preserved as an artifact rather than written back to the repo.
 
-Configuration — ports, commands, sampling `count` / `frequency` / `duration`, and which
-statistics to report — lives in `config/config.yaml`.
+## The ammeters under test
+
+Ports and commands are wired in `config/config.yaml` (kept in sync with the code registry by a
+consistency test). The command protocol is **exact-match**: the emulator replies only if the
+received bytes equal its command exactly.
+
+| Ammeter  | Port | Command                                       | Measurement method          |
+|----------|------|-----------------------------------------------|-----------------------------|
+| Greenlee | 5001 | `MEASURE_GREENLEE -get_measurement`           | Ohm's law: I = V / R        |
+| ENTES    | 5002 | `MEASURE_ENTES -get_data`                     | Hall effect: I = B · K      |
+| CIRCUTOR | 5003 | `MEASURE_CIRCUTOR -get_measurement -current`  | Rogowski coil: I = ∫V dt    |
+
+## Project structure
+
+```
+main.py                     CLI entry point: start emulators, run a campaign, archive, plot,
+                            or answer a read-only --list/--show/--compare query
+Ammeters/                   the provided emulators (fixed infrastructure)
+  base_ammeter.py           AmmeterEmulatorBase: socket accept loop, readiness/stop, ports
+  {Greenlee,Entes,Circutor}_Ammeter.py   the three concrete emulators
+  client.py                 request_current_from_ammeter(): one measurement over a socket
+src/testing/                the framework
+  registry.py               single source of truth: name/class/port/expected range per ammeter
+  settings.py               typed, validated view over config.yaml (fails fast on bad config)
+  test_framework.py         AmmeterTestFramework: unified run_test() / run_all()
+  sampling.py               fixed-rate sampling with monotonic pacing (no sleep drift)
+  analysis.py               statistics (mean/median/std/min/max) via the stdlib
+  results.py                TestResult / Statistics data model
+  store.py                  ResultStore: JSON archive — save / load / list_runs / compare
+  report.py                 human-readable tables (live + archived runs)
+  precision.py              cross-ammeter precision (coefficient of variation) — bonus
+  viz.py                    matplotlib plots (lazy-imported) — bonus
+  fault_emulator.py         FaultInjectingEmulator for error-simulation tests — bonus
+  assertions.py             the test "oracle": a closed set of assertion helpers
+src/utils/                  config loader, logging setup, small helpers
+config/config.yaml          ports, commands, sampling params, which statistics to report
+tests/                      pytest suite (unit + integration tiers)
+examples/run_tests.py       driving the framework programmatically (alternative to main.py)
+docs/                       design-decisions.md, findings.md, handoff.md, sample-results/
+.github/workflows/          ci.yml, measure.yml
+Dockerfile, docker-compose.yml
+```
+
+Live output is git-ignored: archived runs go to `results/`, plots to `plots/`. A committed
+sample of each lives under [`docs/sample-results/`](docs/sample-results/).
 
 ## Precision assessment (bonus)
 
@@ -101,53 +155,11 @@ must remember to run it), add surface to `main.py`, and pollute the fixed emulat
 infrastructure. Keeping fault injection in the tests keeps normal runs clean while still
 proving the behaviour continuously.
 
-## Project Structure
+## Testing
 
-- `Ammeters/`
-  - `main.py`: Main script to start the ammeter emulators and request current measurements.
-  - `Circutor_Ammeter.py`: Emulator for the CIRCUTOR ammeter.
-  - `Entes_Ammeter.py`: Emulator for the ENTES ammeter.
-  - `Greenlee_Ammeter.py`: Emulator for the Greenlee ammeter.
-  - `base_ammeter.py`: Base class for all ammeter emulators.
-  - `client.py`: Client to request current measurements from the ammeter emulators.
-- `config/`
-  - `config.yaml`: Configuration file for the ammeter emulators.
-- `examples/`
-  - `run_test.py`: super lyze example for run test **don't use it**.
-- `src/`
-  - `testing/`
-    - `AmmeterTester.py`: Class to test the ammeter emulators.
-  - `utils/`
-    - `config.py`: Configuration settings.
-    - `logger.py`: Logging setup.
-    - `Utils.py`: Utility functions, including `generate_random_float`.
-
-## Usage
-
-# Ammeter Emulators
-
-## Greenlee Ammeter
-
-- **Port**: 5001
-- **Command**: `MEASURE_GREENLEE -get_measurement`
-- **Measurement Logic**: Calculates current using voltage (1V - 10V) and (0.1Ω - 100Ω).
-- **Measurement method** : Ohm's Law: I = V / R
-
-## ENTES Ammeter
-
-- **Port**: 5002
-- **Command**: `MEASURE_ENTES -get_data`
-- **Measurement Logic**: Calculates current using magnetic field strength (0.01T - 0.1T) and calibration factor (500 - 2000).
-- **Measurement method** : Hall Effect: I = B * K
-
-## CIRCUTOR Ammeter
-
-- **Port**: 5003
-- **Command**: `MEASURE_CIRCUTOR -get_measurement -current`
-- **Measurement Logic**: Calculates current using voltage values (0.1V - 1.0V) over a number of samples and a random time step (0.001s - 0.01s).
-- **Measurement method** : Rogowski Coil Integration: I = ∫V dt
-
-To start the ammeter emulators and request current measurements, run the `main.py` script:
-```sh
-python main.py
-```
+The suite is split into two tiers (pytest markers): **unit** tests for pure logic (statistics,
+config, sampling pacing, formatting) and **integration** tests that talk to a real emulator over
+an ephemeral socket. It includes security-minded negative tests (malformed / oversized / garbage
+commands) and cheap policy gates (no sleep-based waits, no hard-coded ports). See
+[`docs/design-decisions.md`](docs/design-decisions.md) for the testing conventions and
+[`docs/findings.md`](docs/findings.md) for known robustness findings.
