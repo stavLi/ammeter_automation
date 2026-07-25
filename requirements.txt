@@ -1,4 +1,8 @@
 # Runtime dependencies. Kept minimal per the brief — statistics use the stdlib
-# `statistics` module, not numpy/scipy. Plotting libraries (matplotlib) will be added
-# alongside the visualization bonus when that code actually lands.
+# `statistics` module, not numpy/scipy.
 pyyaml>=6.0
+
+# Visualization bonus. matplotlib (which pulls numpy) is the only heavy-ish dependency; it
+# is imported lazily in src/testing/viz.py so the core run, read-only queries, and the test
+# suite don't pay for it unless plots are actually generated.
+matplotlib>=3.5
