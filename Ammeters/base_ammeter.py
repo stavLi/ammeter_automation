@@ -71,11 +71,21 @@ class AmmeterEmulatorBase(ABC):
                     continue
                 with conn:
                     logger.debug("connected by %s", addr)
-                    data = conn.recv(1024)
-                    if data == self.get_current_command:
-                        # Call the specific measure_current() method defined in subclasses
-                        current = self.measure_current()
-                        conn.sendall(str(current).encode('utf-8'))
+                    self._handle_connection(conn)
+
+    def _handle_connection(self, conn: socket.socket) -> None:
+        """Serve one client connection: reply with a measurement iff the received bytes match
+        ``get_current_command`` exactly (else send nothing, as the original starter did).
+
+        Extracted as an overridable seam so specialised emulators — e.g. the fault-injecting
+        emulator used to exercise error handling in tests — can change the reply behaviour
+        without duplicating the accept loop. Default behaviour is unchanged.
+        """
+        data = conn.recv(1024)
+        if data == self.get_current_command:
+            # Call the specific measure_current() method defined in subclasses
+            current = self.measure_current()
+            conn.sendall(str(current).encode('utf-8'))
 
     @property
     @abstractmethod

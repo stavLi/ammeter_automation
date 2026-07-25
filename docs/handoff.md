@@ -41,7 +41,7 @@ _Last updated: 2026-07-25._
 | **4. Result management** (run IDs, metadata, retrieval/compare) | ✅ done (`store.py` — one campaign = one run = one JSON file; save-by-default; `--list`/`--show`/`--compare` CLI; sample under `docs/sample-results/`) |
 | Bonus: **accuracy/precision assessment** | ✅ done — honest *precision* ranking (coefficient of variation) in `precision.py`; accuracy not computable (no ground truth). Viz + error-sim still task #5 |
 | Bonus: **visualization** | ✅ done — `viz.py` writes 3 PNGs/run (histogram, time-series, precision bar); matplotlib lazy-imported; sample embedded in README |
-| Bonus: error simulation | ⏳ task #5 (remaining) |
+| Bonus: **error simulation** | ✅ done — `fault_emulator.py` (HANG/GARBAGE/DROP/FLAKY) + integration tests; fixed a client `ValueError` crash on corrupt replies. Tests-only by design (rationale in README) |
 | Deliverables: framework, README (usage), sample results, design doc | ⚠️ partial — framework runnable + README "How to run" added (PR #6); full README overhaul, design doc, and sample results still task #6 |
 | Constraint: minimize deps | ✅ `requirements.txt` trimmed to `pyyaml` (stats use stdlib); matplotlib added later with the viz bonus |
 
