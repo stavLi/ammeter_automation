@@ -1,28 +1,34 @@
 # Sample test results (Deliverable #3)
 
-These three JSON files are one **sample measurement campaign** — a single `python main.py`
-run, which samples each ammeter once (greenlee / entes / circutor). They are committed here
-as the exercise's "sample test results" deliverable.
+This JSON file is one **sample measurement campaign** — a single `python main.py` run, which
+samples every ammeter (greenlee / entes / circutor) and archives them together under one
+`run_id`. It is committed here as the exercise's "sample test results" deliverable.
 
-Live runs are archived to `results/` (git-ignored); these copies are kept under version
-control so a reviewer can see the archive format without running anything.
+Live runs are archived to `results/` (git-ignored); this copy is kept under version control so
+a reviewer can see the archive format without running anything.
 
-## What each file is
+## Envelope shape
 
-One archived run (see `src/testing/store.py`). The envelope:
+One archived campaign = one run (see `src/testing/store.py`):
 
 | Field | Meaning |
 |---|---|
 | `run_id` | Unique per run: `<UTC timestamp>-<short hash>` |
 | `saved_at` | When it was archived (ISO-8601 UTC) |
-| `metadata` | Provenance — the sampling config and ammeter identity that produced it |
-| `result` | The measurement: raw `samples`, computed `statistics`, `failures`, timing |
+| `metadata.sampling` | The sampling config used (shared across the campaign) |
+| `metadata.ammeters` | Identity of each measured ammeter (port + command) |
+| `metadata.failed` | Requested ammeters that returned no data (e.g. unreachable) |
+| `results.<ammeter>` | Per-ammeter measurement: raw `samples`, `statistics`, `failures`, timing |
+
+Storing the whole campaign under one `run_id` (rather than one file per ammeter) keeps
+comparison simple: historical comparison is campaign-vs-campaign, and cross-ammeter accuracy
+(spec §5) is a lookup *within* one campaign — no reconstructing which results belong together.
 
 ## Reproduce
 
 ```sh
-python main.py                        # archives one run per ammeter to results/
-python main.py --ammeter entes        # a single ammeter
+python main.py                        # archives one run (all ammeters) to results/
+python main.py --ammeter entes        # a one-ammeter campaign
 python main.py --no-save              # run without archiving
 python main.py --results-dir /tmp/x   # archive somewhere else
 ```

@@ -35,7 +35,7 @@ _Last updated: 2026-07-25._
 | **1. Unified measurement API** | ✅ done (PR #5 — config-driven `AmmeterTestFramework`) |
 | **2. Measurement sampling** (count/duration/frequency) | ✅ done (PR #5 — `sampling.py`, monotonic pacing) |
 | **3. Result analysis** (mean/median/std/min/max) | ✅ done (PR #5 — `analysis.py`, stdlib `statistics`) |
-| **4. Result management** (run IDs, metadata, retrieval/compare) | ✅ done (`store.py` — JSON archive, save-by-default in `main.py`, sample under `docs/sample-results/`) |
+| **4. Result management** (run IDs, metadata, retrieval/compare) | ✅ done (`store.py` — one campaign = one run = one JSON file; save-by-default in `main.py`; sample under `docs/sample-results/`) |
 | Bonus: visualization, accuracy assessment, error simulation | ⏳ task #5 |
 | Deliverables: framework, README (usage), sample results, design doc | ⚠️ partial — framework runnable + README "How to run" added (PR #6); full README overhaul, design doc, and sample results still task #6 |
 | Constraint: minimize deps | ✅ `requirements.txt` trimmed to `pyyaml` (stats use stdlib); matplotlib added later with the viz bonus |

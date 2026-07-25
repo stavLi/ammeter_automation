@@ -41,24 +41,31 @@ def run_campaign(framework: AmmeterTestFramework, ammeter: Optional[str] = None)
     return framework.run_all()
 
 
-def _run_metadata(framework: AmmeterTestFramework, name: str) -> Dict[str, Any]:
-    """Provenance stored alongside a result: the sampling config and ammeter identity
-    that produced it, so an archived run is self-describing (spec §4, metadata storage)."""
-    ammeter = framework.config.ammeter(name)
+def _campaign_metadata(
+    framework: AmmeterTestFramework, requested: List[str], measured: Dict[str, TestResult]
+) -> Dict[str, Any]:
+    """Provenance for the whole campaign: the (shared) sampling config, the identity of each
+    ammeter measured, and any *requested* ammeter that produced no data (spec §4)."""
     return {
         "sampling": asdict(framework.config.sampling),
-        "ammeter": {"name": ammeter.name, "port": ammeter.port, "command": ammeter.command.decode()},
+        "ammeters": {
+            name: {"port": framework.config.ammeter(name).port,
+                   "command": framework.config.ammeter(name).command.decode()}
+            for name in measured
+        },
+        # Requested ammeters that returned nothing (e.g. unreachable) — not the unrequested ones.
+        "failed": [name for name in requested if name not in measured],
     }
 
 
 def archive_results(
-    framework: AmmeterTestFramework, results: Dict[str, TestResult], store: ResultStore
-) -> Dict[str, str]:
-    """Persist each result with its run metadata; return {ammeter: run_id}."""
-    run_ids: Dict[str, str] = {}
-    for name, result in results.items():
-        run_ids[name] = store.save(result, metadata=_run_metadata(framework, name))
-    return run_ids
+    framework: AmmeterTestFramework,
+    requested: List[str],
+    results: Dict[str, TestResult],
+    store: ResultStore,
+) -> str:
+    """Persist the whole campaign as one archived run; return its run_id."""
+    return store.save(results, metadata=_campaign_metadata(framework, requested, results))
 
 
 def _parse_args() -> argparse.Namespace:
@@ -98,12 +105,10 @@ if __name__ == "__main__":
     else:
         print("Running measurements...\n")
         framework = AmmeterTestFramework(config_path=args.config)
+        requested = [args.ammeter] if args.ammeter else list(framework.config.ammeters)
         results = run_campaign(framework, args.ammeter)
-        # Results are archived by default (spec §4); --no-save opts out.
+        # The whole campaign is archived as one run (spec §4); --no-save opts out.
         if not args.no_save and results:
-            run_ids = archive_results(framework, results, ResultStore(args.results_dir))
-            print(f"Archived {len(run_ids)} run(s) to {args.results_dir}/:")
-            for name, run_id in run_ids.items():
-                print(f"  {name}: {run_id}")
-            print()
+            run_id = archive_results(framework, requested, results, ResultStore(args.results_dir))
+            print(f"Archived run {run_id} ({len(results)} ammeter(s)) to {args.results_dir}/\n")
         print(format_report(results))
