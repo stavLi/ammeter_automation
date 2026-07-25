@@ -79,6 +79,28 @@ The plots below are the sample run committed under
 The per-ammeter charts use separate axes on purpose — the three ammeters read very different
 current ranges (milliamps to hundreds of amps), so a shared axis would be unreadable.
 
+## Error simulation (bonus)
+
+To prove the framework *handles* faults, `src/testing/fault_emulator.py` provides a
+`FaultInjectingEmulator` that misbehaves on purpose in four modes: **HANG** (never reply →
+client timeout), **GARBAGE** (non-numeric reply), **DROP** (close without replying), and
+**FLAKY** (intermittent). The error-simulation tests drive the real client / sampling loop /
+framework against it and assert graceful degradation — a bad reading becomes one *counted
+failure*, statistics are still computed from the good samples, and a fully-failing ammeter is
+skipped rather than aborting the campaign.
+
+This surfaced (and fixed) a real gap: the client did `float(reply)`, so a **corrupt reply**
+raised `ValueError` and aborted the whole ammeter's run. The client now treats an unparseable
+reply as a single failed measurement (`None`), consistent with how timeouts are handled.
+
+**Design decision — why error simulation lives in the test tier, not a `main.py` flag.**
+Error handling is a property of the framework, and the honest way to demonstrate it is to
+exercise the real code paths against a real misbehaving socket and assert the outcome — which
+then runs in **CI on every push**. A `--simulate-errors` demo flag would prove less (a reviewer
+must remember to run it), add surface to `main.py`, and pollute the fixed emulator
+infrastructure. Keeping fault injection in the tests keeps normal runs clean while still
+proving the behaviour continuously.
+
 ## Project Structure
 
 - `Ammeters/`
