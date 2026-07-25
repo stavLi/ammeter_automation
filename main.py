@@ -11,12 +11,14 @@ import argparse
 import logging
 import os
 import threading
-from typing import Dict, List, Optional
+from dataclasses import asdict
+from typing import Any, Dict, List, Optional
 
 from Ammeters.base_ammeter import AmmeterEmulatorBase
 from src.testing.registry import AMMETERS
 from src.testing.report import format_report
 from src.testing.results import TestResult
+from src.testing.store import ResultStore
 from src.testing.test_framework import AmmeterTestFramework
 
 
@@ -39,12 +41,38 @@ def run_campaign(framework: AmmeterTestFramework, ammeter: Optional[str] = None)
     return framework.run_all()
 
 
+def _run_metadata(framework: AmmeterTestFramework, name: str) -> Dict[str, Any]:
+    """Provenance stored alongside a result: the sampling config and ammeter identity
+    that produced it, so an archived run is self-describing (spec §4, metadata storage)."""
+    ammeter = framework.config.ammeter(name)
+    return {
+        "sampling": asdict(framework.config.sampling),
+        "ammeter": {"name": ammeter.name, "port": ammeter.port, "command": ammeter.command.decode()},
+    }
+
+
+def archive_results(
+    framework: AmmeterTestFramework, results: Dict[str, TestResult], store: ResultStore
+) -> Dict[str, str]:
+    """Persist each result with its run metadata; return {ammeter: run_id}."""
+    run_ids: Dict[str, str] = {}
+    for name, result in results.items():
+        run_ids[name] = store.save(result, metadata=_run_metadata(framework, name))
+    return run_ids
+
+
 def _parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Run measurement tests against the ammeter emulators."
     )
     parser.add_argument("--ammeter", help="run a single ammeter by name (default: all configured)")
     parser.add_argument("--config", default="config/config.yaml", help="path to the config file")
+    parser.add_argument(
+        "--no-save", action="store_true", help="don't archive results (they are saved by default)"
+    )
+    parser.add_argument(
+        "--results-dir", default="results", help="directory to archive results in (default: results)"
+    )
     parser.add_argument(
         "-v", "--verbose", action="store_true", help="show per-measurement debug logging"
     )
@@ -70,4 +98,12 @@ if __name__ == "__main__":
     else:
         print("Running measurements...\n")
         framework = AmmeterTestFramework(config_path=args.config)
-        print(format_report(run_campaign(framework, args.ammeter)))
+        results = run_campaign(framework, args.ammeter)
+        # Results are archived by default (spec §4); --no-save opts out.
+        if not args.no_save and results:
+            run_ids = archive_results(framework, results, ResultStore(args.results_dir))
+            print(f"Archived {len(run_ids)} run(s) to {args.results_dir}/:")
+            for name, run_id in run_ids.items():
+                print(f"  {name}: {run_id}")
+            print()
+        print(format_report(results))

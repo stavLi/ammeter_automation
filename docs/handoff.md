@@ -4,7 +4,7 @@ A living tracker of where this project stands, what's been decided, and what's n
 so any working session (human or agent) can pick up without re-deriving context. Update
 it as part of each PR. For the deep conventions see `CLAUDE.md` and `.claude/skills/`.
 
-_Last updated: 2026-07-24._
+_Last updated: 2026-07-25._
 
 ## At a glance
 - **Repo:** https://github.com/stavLi/ammeter_automation
@@ -35,7 +35,7 @@ _Last updated: 2026-07-24._
 | **1. Unified measurement API** | ✅ done (PR #5 — config-driven `AmmeterTestFramework`) |
 | **2. Measurement sampling** (count/duration/frequency) | ✅ done (PR #5 — `sampling.py`, monotonic pacing) |
 | **3. Result analysis** (mean/median/std/min/max) | ✅ done (PR #5 — `analysis.py`, stdlib `statistics`) |
-| **4. Result management** (run IDs, metadata, retrieval) | ⏳ **next** (task #4) |
+| **4. Result management** (run IDs, metadata, retrieval/compare) | ✅ done (`store.py` — JSON archive, save-by-default in `main.py`, sample under `docs/sample-results/`) |
 | Bonus: visualization, accuracy assessment, error simulation | ⏳ task #5 |
 | Deliverables: framework, README (usage), sample results, design doc | ⚠️ partial — framework runnable + README "How to run" added (PR #6); full README overhaul, design doc, and sample results still task #6 |
 | Constraint: minimize deps | ✅ `requirements.txt` trimmed to `pyyaml` (stats use stdlib); matplotlib added later with the viz bonus |
@@ -51,6 +51,6 @@ _Last updated: 2026-07-24._
 - Optional: `pyright-lsp` plugin enabled locally for live diagnostics (not committed).
 
 ## Next up
-Result management (task #4): unique run IDs, metadata, archive/retrieve/compare — building on
-the `TestResult` shape (which already has `to_dict`). Then bonuses (task #5: visualization,
-cross-ammeter accuracy, error simulation) and docs/sample-results (task #6).
+Bonuses (task #5): visualization, cross-ammeter accuracy, error simulation. Then docs (task #6):
+README overhaul + design-decisions doc (must list bug fixes + any libraries installed). Note the
+sample-results deliverable is already partly satisfied by `docs/sample-results/`.
