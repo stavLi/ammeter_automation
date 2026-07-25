@@ -42,7 +42,7 @@ _Last updated: 2026-07-25._
 | Bonus: **accuracy/precision assessment** | ✅ done — honest *precision* ranking (coefficient of variation) in `precision.py`; accuracy not computable (no ground truth). Viz + error-sim still task #5 |
 | Bonus: **visualization** | ✅ done — `viz.py` writes 3 PNGs/run (histogram, time-series, precision bar); matplotlib lazy-imported; sample embedded in README |
 | Bonus: **error simulation** | ✅ done — `fault_emulator.py` (HANG/GARBAGE/DROP/FLAKY) + integration tests; fixed a client `ValueError` crash on corrupt replies. Tests-only by design (rationale in README) |
-| Deliverables: framework, README (usage), sample results, design doc | ⚠️ partial — framework runnable + README "How to run" added (PR #6); full README overhaul, design doc, and sample results still task #6 |
+| Deliverables: framework, README (usage), sample results, design doc | ✅ done — framework runnable; README overhauled; `docs/design-decisions.md` (bug fixes + libraries + rationale); sample results + plots under `docs/sample-results/` |
 | Constraint: minimize deps | ✅ `requirements.txt` trimmed to `pyyaml` (stats use stdlib); matplotlib added later with the viz bonus |
 
 ## Open findings
@@ -56,6 +56,6 @@ _Last updated: 2026-07-25._
 - Optional: `pyright-lsp` plugin enabled locally for live diagnostics (not committed).
 
 ## Next up
-Bonuses (task #5): visualization, cross-ammeter accuracy, error simulation. Then docs (task #6):
-README overhaul + design-decisions doc (must list bug fixes + any libraries installed). Note the
-sample-results deliverable is already partly satisfied by `docs/sample-results/`.
+All spec requirements and bonuses are implemented and documented. Remaining is optional polish
+and the actual submission (email the repo link). FIND-001 (emulator DoS) is the one deferred
+robustness fix if time allows.
