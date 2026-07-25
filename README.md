@@ -16,8 +16,14 @@ python3 -m venv .venv
 .venv/bin/python main.py
 .venv/bin/python main.py --ammeter entes          # a single ammeter
 .venv/bin/python main.py --verbose                # with per-measurement logging
+.venv/bin/python main.py --no-save                # run without archiving the result
 
-# 3. Run the test suite / type-check
+# 3. Retrieve and compare archived runs (no emulators needed)
+.venv/bin/python main.py --list                   # list archived run IDs
+.venv/bin/python main.py --show <run_id>          # print one archived run
+.venv/bin/python main.py --compare <run_a> <run_b>  # per-ammeter, per-stat deltas
+
+# 4. Run the test suite / type-check
 .venv/bin/pytest
 .venv/bin/pyright
 ```

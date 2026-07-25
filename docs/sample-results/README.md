@@ -33,5 +33,13 @@ python main.py --no-save              # run without archiving
 python main.py --results-dir /tmp/x   # archive somewhere else
 ```
 
-Retrieval and comparison of historical runs are available programmatically via
-`ResultStore.load` / `list_runs` / `compare` (`src/testing/store.py`).
+Retrieve and compare historical runs from the CLI (no emulators needed):
+
+```sh
+python main.py --list                       # list archived run IDs
+python main.py --show <run_id>              # print one archived run
+python main.py --compare <run_a> <run_b>    # per-ammeter, per-stat deltas
+```
+
+The same operations are available programmatically via `ResultStore.load` / `list_runs` /
+`compare` (`src/testing/store.py`).
