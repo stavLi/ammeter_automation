@@ -8,3 +8,7 @@ venv/
 # Live measurement archives — every `python main.py` run writes here. Committed sample
 # runs live under docs/sample-results/ instead (Deliverable #3).
 results/
+
+# Generated plots — same story: live output is ignored, a sample set is committed under
+# docs/sample-results/ and embedded in the README.
+plots/

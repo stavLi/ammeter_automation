@@ -17,6 +17,7 @@ python3 -m venv .venv
 .venv/bin/python main.py --ammeter entes          # a single ammeter
 .venv/bin/python main.py --verbose                # with per-measurement logging
 .venv/bin/python main.py --no-save                # run without archiving the result
+.venv/bin/python main.py --no-plot                # run without generating plots
 
 # 3. Retrieve and compare archived runs (no emulators needed)
 .venv/bin/python main.py --list                   # list archived run IDs
@@ -60,6 +61,23 @@ shown by `python main.py --show <run_id>` for archived runs.
 computable here. The emulators generate random values with **no ground-truth reference** to
 compare against, so any "accuracy" figure would be invented. We report the consistency we can
 actually measure, and label it honestly. (See `src/testing/precision.py`.)
+
+## Visualization (bonus)
+
+Each run also generates three plots (into `plots/`, named by run ID so they pair with the
+archived JSON): a per-ammeter **histogram**, a per-ammeter **time-series**, and a **precision
+bar chart**. `matplotlib` is imported lazily with the headless `Agg` backend, so read-only
+commands and the test suite never pay for it. Disable with `--no-plot`.
+
+The plots below are the sample run committed under
+[`docs/sample-results/`](docs/sample-results/):
+
+| Precision (CV per ammeter) | Distributions | Over the sampling window |
+|---|---|---|
+| ![precision](docs/sample-results/sample_precision.png) | ![histograms](docs/sample-results/sample_histograms.png) | ![time-series](docs/sample-results/sample_timeseries.png) |
+
+The per-ammeter charts use separate axes on purpose — the three ammeters read very different
+current ranges (milliamps to hundreds of amps), so a shared axis would be unreadable.
 
 ## Project Structure
 

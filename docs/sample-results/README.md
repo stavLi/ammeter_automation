@@ -7,6 +7,10 @@ samples every ammeter (greenlee / entes / circutor) and archives them together u
 Live runs are archived to `results/` (git-ignored); this copy is kept under version control so
 a reviewer can see the archive format without running anything.
 
+The three `sample_*.png` files are the plots generated for this same run (histograms,
+time-series, and the precision bar chart) — see the [main README](../../README.md#visualization-bonus)
+where they're embedded.
+
 ## Envelope shape
 
 One archived campaign = one run (see `src/testing/store.py`):

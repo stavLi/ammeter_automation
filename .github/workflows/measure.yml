@@ -69,10 +69,12 @@ jobs:
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
 
-      - name: Upload result JSON
+      - name: Upload result JSON and plots
         if: always()  # keep the archive even if the compare step failed
         uses: actions/upload-artifact@v4
         with:
           name: measurement-results
-          path: results/
+          path: |
+            results/
+            plots/
           if-no-files-found: error
