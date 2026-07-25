@@ -10,15 +10,16 @@ Set AMMETER_SERVE_FOREVER=1 to keep the emulators serving instead of running a c
 import argparse
 import logging
 import os
+import sys
 import threading
 from dataclasses import asdict
 from typing import Any, Dict, List, Optional
 
 from Ammeters.base_ammeter import AmmeterEmulatorBase
 from src.testing.registry import AMMETERS
-from src.testing.report import format_report
+from src.testing.report import format_comparison, format_report, format_run, format_run_list
 from src.testing.results import TestResult
-from src.testing.store import ResultStore
+from src.testing.store import ResultStore, ResultStoreError
 from src.testing.test_framework import AmmeterTestFramework
 
 
@@ -83,7 +84,34 @@ def _parse_args() -> argparse.Namespace:
     parser.add_argument(
         "-v", "--verbose", action="store_true", help="show per-measurement debug logging"
     )
+    # Read-only queries over archived runs — these don't start the emulators (spec §4:
+    # easy retrieval and comparison of historical results).
+    query = parser.add_mutually_exclusive_group()
+    query.add_argument("--list", action="store_true", help="list archived run IDs and exit")
+    query.add_argument("--show", metavar="RUN_ID", help="print one archived run and exit")
+    query.add_argument(
+        "--compare", nargs=2, metavar=("RUN_A", "RUN_B"), help="compare two archived runs and exit"
+    )
     return parser.parse_args()
+
+
+def run_query(args: argparse.Namespace) -> bool:
+    """Handle a read-only archive query (--list/--show/--compare). Returns True if one ran
+    (the caller should then exit without touching the emulators), False otherwise."""
+    store = ResultStore(args.results_dir)
+    try:
+        if args.list:
+            print(format_run_list(store.list_runs()))
+        elif args.show:
+            print(format_run(store.load(args.show)))
+        elif args.compare:
+            run_a, run_b = args.compare
+            print(format_comparison(run_a, run_b, store.compare(run_a, run_b)))
+        else:
+            return False
+    except ResultStoreError as exc:
+        sys.exit(f"error: {exc}")
+    return True
 
 
 if __name__ == "__main__":
@@ -92,6 +120,10 @@ if __name__ == "__main__":
         level=logging.DEBUG if args.verbose else logging.WARNING,
         format="%(levelname)s %(name)s: %(message)s",
     )
+
+    # Read-only archive queries answer from stored files — no emulators needed.
+    if run_query(args):
+        sys.exit(0)
 
     # Bind host is configurable so the emulators can listen on 0.0.0.0 inside a container.
     bind_host = os.environ.get("AMMETER_BIND_HOST", "localhost")
