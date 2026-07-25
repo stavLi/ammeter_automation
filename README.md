@@ -36,6 +36,15 @@ docker compose up --build --abort-on-container-exit --exit-code-from tests
 
 Runs the emulators as a service and executes the full test suite against them.
 
+### In CI (GitHub Actions)
+
+- **CI** (`.github/workflows/ci.yml`) runs `pyright` + the full test suite on every push/PR.
+- **Measurement showcase** (`.github/workflows/measure.yml`) is a manually-triggered workflow
+  (Actions tab → *Measurement showcase* → *Run workflow*) that runs the framework in the
+  pipeline: it takes two measurement campaigns, compares them, writes the comparison to the
+  run summary, and uploads the result JSON as a downloadable artifact. Because CI runners are
+  ephemeral, results are preserved as an artifact rather than written back to the repo.
+
 Configuration — ports, commands, sampling `count` / `frequency` / `duration`, and which
 statistics to report — lives in `config/config.yaml`.
 
