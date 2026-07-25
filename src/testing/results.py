@@ -16,6 +16,13 @@ class Statistics:
     minimum: float
     maximum: float
 
+    @property
+    def coefficient_of_variation(self) -> float:
+        """Relative standard deviation (std / mean) — a scale-free measure of consistency,
+        so it can be compared across ammeters that read different current ranges. Lower is
+        more consistent. Undefined (inf) if the mean is non-positive."""
+        return self.std_dev / self.mean if self.mean > 0 else float("inf")
+
 
 @dataclass(frozen=True)
 class TestResult:

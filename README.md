@@ -48,6 +48,19 @@ Runs the emulators as a service and executes the full test suite against them.
 Configuration — ports, commands, sampling `count` / `frequency` / `duration`, and which
 statistics to report — lives in `config/config.yaml`.
 
+## Precision assessment (bonus)
+
+After a campaign, the framework ranks the ammeters by **precision** — how *consistent* their
+readings are — using the coefficient of variation (`std / mean`). Because it is scale-free, it
+compares fairly across ammeters that read very different current ranges, and a lower value means
+more consistent (more reliable) measurement. The ranking is printed after every run and also
+shown by `python main.py --show <run_id>` for archived runs.
+
+**Why precision and not accuracy:** true *accuracy* — closeness to the real current — is not
+computable here. The emulators generate random values with **no ground-truth reference** to
+compare against, so any "accuracy" figure would be invented. We report the consistency we can
+actually measure, and label it honestly. (See `src/testing/precision.py`.)
+
 ## Project Structure
 
 - `Ammeters/`
