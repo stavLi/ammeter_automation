@@ -4,3 +4,7 @@ __pycache__/
 *.pyc
 .venv/
 venv/
+
+# Live measurement archives — every `python main.py` run writes here. Committed sample
+# runs live under docs/sample-results/ instead (Deliverable #3).
+results/
