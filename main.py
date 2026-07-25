@@ -17,7 +17,14 @@ from typing import Any, Dict, List, Optional
 
 from Ammeters.base_ammeter import AmmeterEmulatorBase
 from src.testing.registry import AMMETERS
-from src.testing.report import format_comparison, format_report, format_run, format_run_list
+from src.testing.precision import assess_precision
+from src.testing.report import (
+    format_comparison,
+    format_precision,
+    format_report,
+    format_run,
+    format_run_list,
+)
 from src.testing.results import TestResult
 from src.testing.store import ResultStore, ResultStoreError
 from src.testing.test_framework import AmmeterTestFramework
@@ -144,3 +151,6 @@ if __name__ == "__main__":
             run_id = archive_results(framework, requested, results, ResultStore(args.results_dir))
             print(f"Archived run {run_id} ({len(results)} ammeter(s)) to {args.results_dir}/\n")
         print(format_report(results))
+        if results:
+            print()
+            print(format_precision(assess_precision({n: r.statistics for n, r in results.items()})))

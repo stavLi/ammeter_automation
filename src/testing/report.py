@@ -6,7 +6,8 @@ them share one aligned-table core so live and archived output look identical.
 """
 from typing import Any, Dict, List
 
-from .results import TestResult
+from .precision import PrecisionAssessment, assess_precision
+from .results import Statistics, TestResult
 
 _STAT_ORDER = ("count", "mean", "median", "std_dev", "minimum", "maximum")
 
@@ -36,6 +37,32 @@ def format_report(results: Dict[str, TestResult]) -> str:
     return _stats_table({name: r.to_dict() for name, r in results.items()})
 
 
+def format_precision(assessments: List[PrecisionAssessment]) -> str:
+    """Render the cross-ammeter precision ranking (most consistent first).
+
+    Precision = consistency, measured by coefficient of variation (std/mean); see
+    precision.py for why this is precision, not accuracy.
+    """
+    if not assessments:
+        return ""
+
+    lines = [
+        "Precision (coefficient of variation = std/mean; lower = more consistent):",
+        f"  {'ammeter':<10} {'mean':>12} {'std_dev':>12} {'CV':>10}",
+    ]
+    for a in assessments:
+        cv = "inf" if a.coefficient_of_variation == float("inf") else f"{a.coefficient_of_variation:.4f}"
+        lines.append(f"  {a.ammeter:<10} {a.mean:>12.4f} {a.std_dev:>12.4f} {cv:>10}")
+    if len(assessments) > 1:
+        lines.append(f"  -> most consistent: {assessments[0].ammeter}")
+    return "\n".join(lines)
+
+
+def _precision_from_result_dicts(results: Dict[str, Dict[str, Any]]) -> List[PrecisionAssessment]:
+    # Rebuild Statistics from the stored dict so archived runs can be assessed too.
+    return assess_precision({name: Statistics(**r["statistics"]) for name, r in results.items()})
+
+
 def format_run_list(run_ids: List[str]) -> str:
     """List archived run IDs, oldest first (the ID embeds the UTC timestamp)."""
     if not run_ids:
@@ -59,8 +86,12 @@ def format_run(envelope: Dict[str, Any]) -> str:
         )
     if failed:
         lines.append(f"failed (no data): {', '.join(failed)}")
+    results = envelope.get("results", {})
     lines.append("")
-    lines.append(_stats_table(envelope.get("results", {})))
+    lines.append(_stats_table(results))
+    if results:
+        lines.append("")
+        lines.append(format_precision(_precision_from_result_dicts(results)))
     return "\n".join(lines)
 
 
