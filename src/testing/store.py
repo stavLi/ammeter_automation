@@ -1,14 +1,23 @@
 """Archiving and retrieval of measurement runs (spec §4, Result Management).
 
-A run is persisted as a single self-contained JSON file under ``results/`` — no database,
-no ORM, no extra dependency (stdlib ``json`` only, honoring the "minimize dependencies"
-constraint). Each file is an envelope:
+**One campaign = one run = one file.** A "run" is a single framework invocation
+(``python main.py``), which may sample one or several ammeters. All of it is archived as a
+single JSON envelope under one ``run_id``.
+
+We deliberately store the whole campaign together rather than one file per ammeter. Grouping
+the ammeters that were measured *in the same run* under a single ``run_id`` keeps comparison
+logic simple: historical comparison is campaign-vs-campaign, and cross-ammeter accuracy
+(spec §5) is a lookup *within* one campaign — neither has to reconstruct "which results
+belong together" by matching timestamps across separate files.
+
+No database, no ORM, no extra dependency — stdlib ``json`` only (honors the "minimize
+dependencies" constraint). The envelope:
 
     {
       "run_id":   "<UTC timestamp>-<short hash>",   # unique per run
       "saved_at": "<ISO-8601 UTC>",
-      "metadata": { ... },                          # caller-supplied (sampling config, etc.)
-      "result":   { ... }                            # TestResult.to_dict()
+      "metadata": { "sampling": {...}, "ammeters": {...}, "failed": [...] },
+      "results":  { "<ammeter>": TestResult.to_dict(), ... }
     }
 
 ``ResultStore`` gives the three things §4 asks for: unique identification (``run_id``),
@@ -41,15 +50,15 @@ class ResultStore:
     def __init__(self, root: str = "results"):
         self.root = Path(root)
 
-    def save(self, result: TestResult, metadata: Optional[Dict[str, Any]] = None) -> str:
-        """Archive one run and return its unique run_id."""
+    def save(self, results: Dict[str, TestResult], metadata: Optional[Dict[str, Any]] = None) -> str:
+        """Archive one campaign (all its ammeters) and return its unique run_id."""
         self.root.mkdir(parents=True, exist_ok=True)
         run_id = _new_run_id()
         envelope = {
             "run_id": run_id,
             "saved_at": datetime.now(timezone.utc).isoformat(),
             "metadata": metadata or {},
-            "result": result.to_dict(),
+            "results": {name: result.to_dict() for name, result in results.items()},
         }
         # A run_id collision would silently overwrite a prior run — refuse instead.
         path = self._path(run_id)
@@ -71,10 +80,26 @@ class ResultStore:
             return []
         return sorted(p.stem for p in self.root.glob("*.json"))
 
-    def compare(self, run_id_a: str, run_id_b: str) -> Dict[str, Dict[str, float]]:
-        """Per-statistic comparison of two runs: {metric: {a, b, delta}} (delta = b - a)."""
-        stats_a = self.load(run_id_a)["result"]["statistics"]
-        stats_b = self.load(run_id_b)["result"]["statistics"]
+    def compare(self, run_id_a: str, run_id_b: str) -> Dict[str, Dict[str, Dict[str, float]]]:
+        """Per-ammeter, per-statistic comparison of two campaigns.
+
+        Returns {ammeter: {metric: {a, b, delta}}} (delta = b - a) for every ammeter present
+        in *both* runs.
+        """
+        results_a = self.load(run_id_a)["results"]
+        results_b = self.load(run_id_b)["results"]
+        common = sorted(set(results_a) & set(results_b))
+        return {
+            ammeter: self._stat_deltas(
+                results_a[ammeter]["statistics"], results_b[ammeter]["statistics"]
+            )
+            for ammeter in common
+        }
+
+    @staticmethod
+    def _stat_deltas(
+        stats_a: Dict[str, float], stats_b: Dict[str, float]
+    ) -> Dict[str, Dict[str, float]]:
         return {
             field: {"a": stats_a[field], "b": stats_b[field], "delta": stats_b[field] - stats_a[field]}
             for field in _STAT_FIELDS
