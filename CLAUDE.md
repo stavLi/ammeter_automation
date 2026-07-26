@@ -80,7 +80,7 @@ port numbers are out of date):**
 
 **The framework being built** (`src/`) sits on top of the client:
 - `src/testing/test_framework.py` — `AmmeterTestFramework`, config-driven, the unified entry point.
-- `src/utils/` — `config.py` (loads `config/config.yaml`), `logger.py`, `Utils.py`.
+- `src/utils/` — `config.py` (loads `config/config.yaml`), `Utils.py`.
 - `config/config.yaml` — drives ports/commands, sampling params, analysis, result management.
 
 ### Gotchas that will bite
@@ -90,9 +90,10 @@ port numbers are out of date):**
   full command bytes from the table above.
 - **Emulators bind fixed ports.** If a previous run didn't release them, a rerun fails to bind;
   increase the startup sleep in `main.py` or wait for the OS to free the port.
-- **Starter stubs.** `src/testing/test_framework.py`, `src/utils/logger.py`, and
-  `config/config.yaml` ship as incomplete stubs — they are the framework to build out, not
-  working code. Some contain deliberate bugs to find and fix (document any fix).
+- **Starter stubs.** `src/testing/test_framework.py` and `config/config.yaml` ship as
+  incomplete stubs — they are the framework to build out, not working code. Some contain
+  deliberate bugs to find and fix (document any fix). (The starter also shipped an unused,
+  half-implemented `src/utils/logger.py`, since removed — see `docs/design-decisions.md`.)
 
 ## Domain + testing conventions
 

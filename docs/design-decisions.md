@@ -29,6 +29,14 @@ readiness/stop events (`wait_until_ready()` / `stop()`) so tests never sleep-and
 the stop flag; an overridable `_handle_connection` seam (used by the fault emulator); and
 `print` → `logging` throughout.
 
+**Removed unused starter scaffolding: `src/utils/logger.py`.** The starter shipped a
+half-implemented `TestLogger` class that nothing imported and that never actually logged to a file
+(`_setup_logger` built a log-file path but attached no handler, while creating a `results/logs/`
+directory as a construction side effect). Logging is already handled the idiomatic way — `main.py`
+calls `logging.basicConfig(...)` and every module uses `logging.getLogger(__name__)` — so keeping
+a second, broken logging mechanism would only invite confusion. It was deleted rather than wired
+in. (The other provided `src/utils/` files — `config.py`, `Utils.py` — are in active use and kept.)
+
 ## Libraries installed
 
 Kept minimal per the brief; statistics use the stdlib, not numpy/scipy.
